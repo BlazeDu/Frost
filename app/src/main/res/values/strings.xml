@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">泠风辅助</string>
+    <string name="foreground_service_description">悬浮窗服务</string>
+</resources>
