@@ -2,7 +2,6 @@ package com.storm.coldwind
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
@@ -49,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import com.storm.coldwind.floatwindow.FloatWindowService
 import com.storm.coldwind.ui.theme.AppTheme
 import java.io.DataOutputStream
 

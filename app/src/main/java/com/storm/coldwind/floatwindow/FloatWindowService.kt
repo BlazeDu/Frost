@@ -1,6 +1,5 @@
-package com.storm.coldwind
+package com.storm.coldwind.floatwindow
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -28,6 +27,8 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.storm.coldwind.R
+import com.storm.coldwind.ThemeManager
 
 class FloatWindowService : Service() {
 
@@ -52,7 +53,7 @@ class FloatWindowService : Service() {
     private var dragStartRawY = 0f
     private var isDraggingMenu = false
 
-    private lateinit var pages: MutableList<MenuPage>
+    private lateinit var pages: MutableList<Menu>
     private var selectedPageId = "page_1"
     private lateinit var rightContentContainer: LinearLayout
     private lateinit var currentColors: ThemeColors
@@ -62,15 +63,17 @@ class FloatWindowService : Service() {
     private fun getThemeColors(): ThemeColors {
         val isDark = isDarkMode()
         return ThemeColors(
-            backgroundColor = if (isDark) Color.parseColor("#E61E1E1E") else Color.parseColor("#FFFFFFFF"),
-            surfaceColor = if (isDark) Color.parseColor("#2A2A2A") else Color.parseColor("#F5F5F5"),
-            textColor = if (isDark) Color.WHITE else Color.parseColor("#1A1A2E"),
-            secondaryTextColor = if (isDark) Color.parseColor("#AAAAAA") else Color.parseColor("#666666"),
-            dividerColor = if (isDark) Color.parseColor("#333333") else Color.parseColor("#E0E0E0"),
-            buttonBgColor = if (isDark) Color.parseColor("#333333") else Color.parseColor("#E8E8E8"),
-            selectedButtonColor = Color.parseColor("#3F51B5"),
-            toggleOffColor = Color.parseColor("#666666"),
-            toggleOnColor = Color.parseColor("#3F51B5")
+            // 深色模式：不透明深色背景；浅色模式：白色背景
+            backgroundColor = if (isDark) Color.parseColor("#FF1E1E1E") else Color.parseColor("#FFFFFFFF"),
+            surfaceColor = if (isDark) Color.parseColor("#FF2D2D2D") else Color.parseColor("#FFF5F5F5"),
+            textColor = if (isDark) Color.WHITE else Color.parseColor("#FF1A1A2E"),
+            secondaryTextColor = if (isDark) Color.parseColor("#FFAAAAAA") else Color.parseColor("#FF666666"),
+            dividerColor = if (isDark) Color.parseColor("#FF444444") else Color.parseColor("#FFE0E0E0"),
+            // 按钮背景色：深色模式用深灰色，浅色模式用浅灰色
+            buttonBgColor = if (isDark) Color.parseColor("#FF3D3D3D") else Color.parseColor("#FFE8E8E8"),
+            selectedButtonColor = Color.parseColor("#FF3F51B5"),
+            toggleOffColor = if (isDark) Color.parseColor("#FF555555") else Color.parseColor("#FFCCCCCC"),
+            toggleOnColor = Color.parseColor("#FF3F51B5")
         )
     }
 
@@ -83,7 +86,7 @@ class FloatWindowService : Service() {
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        OperationManager.init(this, windowManager)  // 传入 windowManager
+        ActionDispatcher.init(this, windowManager)
         pages = MenuPages.getPages()
         createNotification()
         createFloatIcon()
@@ -256,15 +259,15 @@ class FloatWindowService : Service() {
 
         page.items.forEach { item ->
             when (item) {
-                is MenuItem.Switch -> {
+                is Item.Switch -> {
                     rightContentContainer.addView(createSwitchView(item, colors))
                     rightContentContainer.addView(createDivider(colors))
                 }
-                is MenuItem.Counter -> {
+                is Item.Counter -> {
                     rightContentContainer.addView(createCounterView(item, colors))
                     rightContentContainer.addView(createDivider(colors))
                 }
-                is MenuItem.Selector -> {
+                is Item.Selector -> {
                     rightContentContainer.addView(createSelectorView(item, colors))
                     rightContentContainer.addView(createDivider(colors))
                 }
@@ -278,7 +281,7 @@ class FloatWindowService : Service() {
         }
     }
 
-    private fun createSwitchView(item: MenuItem.Switch, colors: ThemeColors): LinearLayout {
+    private fun createSwitchView(item: Item.Switch, colors: ThemeColors): LinearLayout {
         val density = resources.displayMetrics.density
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -322,13 +325,13 @@ class FloatWindowService : Service() {
             (toggleBg.background as GradientDrawable).setColor(if (item.enabled) colors.toggleOnColor else colors.toggleOffColor)
             (toggleThumb.layoutParams as FrameLayout.LayoutParams).leftMargin = if (item.enabled) (14 * density).toInt() else 2
             toggleThumb.requestLayout()
-            OperationManager.execute(item.id, item.enabled)
+            ActionDispatcher.execute(item.id, item.enabled)
         }
 
         return row
     }
 
-    private fun createCounterView(item: MenuItem.Counter, colors: ThemeColors): LinearLayout {
+    private fun createCounterView(item: Item.Counter, colors: ThemeColors): LinearLayout {
         val density = resources.displayMetrics.density
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -358,7 +361,7 @@ class FloatWindowService : Service() {
         val minusBtn = TextView(this).apply {
             text = "-"
             textSize = 18f
-            setTextColor(colors.textColor)
+            setTextColor(Color.WHITE)  // 按钮文字固定白色，更清晰
             gravity = Gravity.CENTER
             setPadding((10 * density).toInt(), (4 * density).toInt(), (10 * density).toInt(), (4 * density).toInt())
             background = GradientDrawable().apply {
@@ -370,7 +373,7 @@ class FloatWindowService : Service() {
                 if (item.value > 0) {
                     item.value--
                     valueText.text = item.value.toString()
-                    OperationManager.execute(item.id, item.value)
+                    ActionDispatcher.execute(item.id, item.value)
                 }
             }
         }
@@ -378,7 +381,7 @@ class FloatWindowService : Service() {
         val plusBtn = TextView(this).apply {
             text = "+"
             textSize = 18f
-            setTextColor(colors.textColor)
+            setTextColor(Color.WHITE)  // 按钮文字固定白色，更清晰
             gravity = Gravity.CENTER
             setPadding((10 * density).toInt(), (4 * density).toInt(), (10 * density).toInt(), (4 * density).toInt())
             background = GradientDrawable().apply {
@@ -389,7 +392,7 @@ class FloatWindowService : Service() {
             setOnClickListener {
                 item.value++
                 valueText.text = item.value.toString()
-                OperationManager.execute(item.id, item.value)
+                ActionDispatcher.execute(item.id, item.value)
             }
         }
 
@@ -401,7 +404,7 @@ class FloatWindowService : Service() {
         return row
     }
 
-    private fun createSelectorView(item: MenuItem.Selector, colors: ThemeColors): LinearLayout {
+    private fun createSelectorView(item: Item.Selector, colors: ThemeColors): LinearLayout {
         val density = resources.displayMetrics.density
         val isDark = isDarkMode()
         val container = LinearLayout(this).apply {
@@ -429,6 +432,7 @@ class FloatWindowService : Service() {
                 gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(0, (36 * density).toInt(), 1f)
                 setPadding((4 * density).toInt(), (8 * density).toInt(), (4 * density).toInt(), (8 * density).toInt())
+                // 选中时白色文字，未选中时根据主题显示
                 setTextColor(if (isSelected) Color.WHITE else colors.textColor)
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.RECTANGLE
@@ -447,7 +451,7 @@ class FloatWindowService : Service() {
                             )
                         }
                     }
-                    OperationManager.execute(item.id, option)
+                    ActionDispatcher.execute(item.id, option)
                 }
             }
             row.addView(btn)

@@ -39,7 +39,7 @@
         <activity android:name=".AppSettings" />
 
         <service
-            android:name=".FloatWindowService"
+            android:name=".floatwindow.FloatWindowService"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property

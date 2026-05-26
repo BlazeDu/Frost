@@ -1,4 +1,4 @@
-package com.storm.coldwind
+package com.storm.coldwind.floatwindow
 
 import android.content.Context
 import android.os.Handler
@@ -11,7 +11,7 @@ import android.graphics.PixelFormat
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 
-object OperationManager {
+object ActionDispatcher {
 
     private lateinit var context: Context
     private lateinit var windowManager: WindowManager

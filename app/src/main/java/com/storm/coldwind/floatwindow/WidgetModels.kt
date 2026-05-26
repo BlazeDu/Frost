@@ -1,28 +1,28 @@
-package com.storm.coldwind
+package com.storm.coldwind.floatwindow
 
-sealed class MenuItem {
+sealed class Item {
     data class Switch(
         val id: String,
         val title: String,
         var enabled: Boolean
-    ) : MenuItem()
+    ) : Item()
 
     data class Counter(
         val id: String,
         val title: String,
         var value: Int
-    ) : MenuItem()
+    ) : Item()
 
     data class Selector(
         val id: String,
         val title: String,
         val options: List<String>,
         var selected: String
-    ) : MenuItem()
+    ) : Item()
 }
 
-data class MenuPage(
+data class Menu(
     val id: String,
     val title: String,
-    val items: MutableList<MenuItem>
+    val items: MutableList<Item>
 )
