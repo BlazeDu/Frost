@@ -73,14 +73,17 @@ class FloatWindowService : Service() {
             buttonBgColor = if (isDark) Color.parseColor("#FF3D3D3D") else Color.parseColor("#FFE8E8E8"),
             selectedButtonColor = Color.parseColor("#FF3F51B5"),
             toggleOffColor = if (isDark) Color.parseColor("#FF555555") else Color.parseColor("#FFCCCCCC"),
-            toggleOnColor = Color.parseColor("#FF3F51B5")
+            toggleOnColor = Color.parseColor("#FF3F51B5"),
+            // Counter 文字颜色：深色模式白色，浅色模式黑色
+            counterTextColor = if (isDark) Color.WHITE else Color.parseColor("#FF000000")
         )
     }
 
     data class ThemeColors(
         val backgroundColor: Int, val surfaceColor: Int, val textColor: Int,
         val secondaryTextColor: Int, val dividerColor: Int, val buttonBgColor: Int,
-        val selectedButtonColor: Int, val toggleOffColor: Int, val toggleOnColor: Int
+        val selectedButtonColor: Int, val toggleOffColor: Int, val toggleOnColor: Int,
+        val counterTextColor: Int  // 新增字段
     )
 
     override fun onCreate() {
@@ -361,7 +364,7 @@ class FloatWindowService : Service() {
         val minusBtn = TextView(this).apply {
             text = "-"
             textSize = 18f
-            setTextColor(Color.WHITE)  // 按钮文字固定白色，更清晰
+            setTextColor(colors.textColor)  // 改为跟随主题
             gravity = Gravity.CENTER
             setPadding((10 * density).toInt(), (4 * density).toInt(), (10 * density).toInt(), (4 * density).toInt())
             background = GradientDrawable().apply {
@@ -381,7 +384,7 @@ class FloatWindowService : Service() {
         val plusBtn = TextView(this).apply {
             text = "+"
             textSize = 18f
-            setTextColor(Color.WHITE)  // 按钮文字固定白色，更清晰
+            setTextColor(colors.textColor)  // 改为跟随主题
             gravity = Gravity.CENTER
             setPadding((10 * density).toInt(), (4 * density).toInt(), (10 * density).toInt(), (4 * density).toInt())
             background = GradientDrawable().apply {
@@ -432,7 +435,6 @@ class FloatWindowService : Service() {
                 gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(0, (36 * density).toInt(), 1f)
                 setPadding((4 * density).toInt(), (8 * density).toInt(), (4 * density).toInt(), (8 * density).toInt())
-                // 选中时白色文字，未选中时根据主题显示
                 setTextColor(if (isSelected) Color.WHITE else colors.textColor)
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.RECTANGLE
