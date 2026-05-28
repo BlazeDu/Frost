@@ -1,31 +1,31 @@
 package com.storm.coldwind.floatwindow
 
 sealed class Item {
-    // 手动声明的 Divider
     object Divider : Item()
 
     data class Switch(
-        val id: String,
         val title: String,
-        var enabled: Boolean
+        var enabled: Boolean,
+        val onToggle: (Boolean) -> Unit
     ) : Item()
 
     data class Counter(
-        val id: String,
         val title: String,
-        var value: Int
+        var value: Int,
+        val onChange: (Int) -> Unit
     ) : Item()
 
     data class Selector(
-        val id: String,
         val title: String,
         val options: List<String>,
-        var selected: String
+        var selected: String,
+        val onSelect: (String) -> Unit
     ) : Item()
 }
 
 data class Menu(
     val id: String,
     val title: String,
-    val items: MutableList<Item>
+    val items: MutableList<Item>,
+    val onClick: (() -> Unit)? = null
 )

@@ -54,9 +54,9 @@ class FloatWindowService : Service() {
     private var isDraggingMenu = false
 
     private lateinit var pages: MutableList<Menu>
-    private var selectedPageId = "page_1"
     private lateinit var rightContentContainer: LinearLayout
     private lateinit var currentColors: ThemeColors
+    private val menuButtons = mutableListOf<TextView>()
 
     private fun isDarkMode(): Boolean = ThemeManager.isDarkTheme(applicationContext)
 
@@ -87,6 +87,13 @@ class FloatWindowService : Service() {
         super.onCreate()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         ActionDispatcher.init(this, windowManager)
+
+        // 注册菜单切换回调
+        MenuPages.onMenuChanged = { menu ->
+            updateRightContent(menu)
+            updateMenuButtonsStyle()
+        }
+
         pages = MenuPages.getPages()
         createNotification()
         createFloatIcon()
@@ -252,15 +259,11 @@ class FloatWindowService : Service() {
         }
     }
 
-    /**
-     * 更新右侧内容区域 - 不再自动添加 Divider，完全由 MenuPages 中的 Item.Divider 手动控制
-     */
-    private fun updateRightContent() {
+    private fun updateRightContent(menu: Menu) {
         rightContentContainer.removeAllViews()
-        val page = pages.find { it.id == selectedPageId } ?: return
         val colors = currentColors
 
-        page.items.forEach { item ->
+        menu.items.forEach { item ->
             when (item) {
                 is Item.Switch -> {
                     rightContentContainer.addView(createSwitchView(item, colors))
@@ -275,6 +278,17 @@ class FloatWindowService : Service() {
                     rightContentContainer.addView(createDivider(colors))
                 }
             }
+        }
+    }
+
+    private fun updateMenuButtonsStyle() {
+        val colors = currentColors
+        menuButtons.forEach { btn ->
+            val isSelected = btn.text.toString() == pages.find { it.id == MenuPages.selectedId }?.title
+            btn.setTextColor(if (isSelected) Color.WHITE else colors.textColor)
+            (btn.background as GradientDrawable).setColor(
+                if (isSelected) colors.selectedButtonColor else colors.buttonBgColor
+            )
         }
     }
 
@@ -322,7 +336,7 @@ class FloatWindowService : Service() {
             (toggleBg.background as GradientDrawable).setColor(if (item.enabled) colors.toggleOnColor else colors.toggleOffColor)
             (toggleThumb.layoutParams as FrameLayout.LayoutParams).leftMargin = if (item.enabled) (14 * density).toInt() else 2
             toggleThumb.requestLayout()
-            ActionDispatcher.execute(item.id, item.enabled)
+            item.onToggle(item.enabled)
         }
 
         return row
@@ -370,7 +384,7 @@ class FloatWindowService : Service() {
                 if (item.value > 0) {
                     item.value--
                     valueText.text = item.value.toString()
-                    ActionDispatcher.execute(item.id, item.value)
+                    item.onChange(item.value)
                 }
             }
         }
@@ -389,7 +403,7 @@ class FloatWindowService : Service() {
             setOnClickListener {
                 item.value++
                 valueText.text = item.value.toString()
-                ActionDispatcher.execute(item.id, item.value)
+                item.onChange(item.value)
             }
         }
 
@@ -446,7 +460,7 @@ class FloatWindowService : Service() {
                             )
                         }
                     }
-                    ActionDispatcher.execute(item.id, option)
+                    item.onSelect(option)
                 }
             }
             row.addView(btn)
@@ -550,13 +564,14 @@ class FloatWindowService : Service() {
             setPadding((8 * density).toInt(), (12 * density).toInt(), (4 * density).toInt(), (12 * density).toInt())
         }
 
-        val menuButtons = mutableListOf<View>()
-
+        menuButtons.clear()
         pages.forEachIndexed { idx, page ->
             if (idx > 0) {
-                leftMenu.addView(View(this).apply { layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (8 * density).toInt()) })
+                leftMenu.addView(View(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (8 * density).toInt())
+                })
             }
-            val isSelected = selectedPageId == page.id
+            val isSelected = MenuPages.selectedId == page.id
             val btn = TextView(this).apply {
                 text = page.title
                 textSize = 12f
@@ -569,16 +584,7 @@ class FloatWindowService : Service() {
                     setColor(if (isSelected) colors.selectedButtonColor else colors.buttonBgColor)
                 }
                 setOnClickListener {
-                    selectedPageId = page.id
-                    menuButtons.forEach { b ->
-                        val btnView = b as TextView
-                        val btnSelected = btnView.text.toString() == page.title
-                        btnView.setTextColor(if (btnSelected) Color.WHITE else colors.textColor)
-                        (btnView.background as GradientDrawable).setColor(
-                            if (btnSelected) colors.selectedButtonColor else colors.buttonBgColor
-                        )
-                    }
-                    updateRightContent()
+                    page.onClick?.invoke()
                 }
             }
             leftMenu.addView(btn)
@@ -625,7 +631,8 @@ class FloatWindowService : Service() {
         menuLayoutParams?.y = floatY
         menuView?.visibility = View.GONE
 
-        updateRightContent()
+        // 初始化右侧内容
+        MenuPages.getCurrentMenu()?.let { updateRightContent(it) }
     }
 
     private fun getWindowType(): Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
