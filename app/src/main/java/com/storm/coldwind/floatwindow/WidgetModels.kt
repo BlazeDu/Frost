@@ -1,6 +1,9 @@
 package com.storm.coldwind.floatwindow
 
 sealed class Item {
+    // 手动声明的 Divider
+    object Divider : Item()
+
     data class Switch(
         val id: String,
         val title: String,

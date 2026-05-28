@@ -63,18 +63,15 @@ class FloatWindowService : Service() {
     private fun getThemeColors(): ThemeColors {
         val isDark = isDarkMode()
         return ThemeColors(
-            // 深色模式：不透明深色背景；浅色模式：白色背景
             backgroundColor = if (isDark) Color.parseColor("#FF1E1E1E") else Color.parseColor("#FFFFFFFF"),
             surfaceColor = if (isDark) Color.parseColor("#FF2D2D2D") else Color.parseColor("#FFF5F5F5"),
             textColor = if (isDark) Color.WHITE else Color.parseColor("#FF1A1A2E"),
             secondaryTextColor = if (isDark) Color.parseColor("#FFAAAAAA") else Color.parseColor("#FF666666"),
             dividerColor = if (isDark) Color.parseColor("#FF444444") else Color.parseColor("#FFE0E0E0"),
-            // 按钮背景色：深色模式用深灰色，浅色模式用浅灰色
             buttonBgColor = if (isDark) Color.parseColor("#FF3D3D3D") else Color.parseColor("#FFE8E8E8"),
             selectedButtonColor = Color.parseColor("#FF3F51B5"),
             toggleOffColor = if (isDark) Color.parseColor("#FF555555") else Color.parseColor("#FFCCCCCC"),
             toggleOnColor = Color.parseColor("#FF3F51B5"),
-            // Counter 文字颜色：深色模式白色，浅色模式黑色
             counterTextColor = if (isDark) Color.WHITE else Color.parseColor("#FF000000")
         )
     }
@@ -83,7 +80,7 @@ class FloatWindowService : Service() {
         val backgroundColor: Int, val surfaceColor: Int, val textColor: Int,
         val secondaryTextColor: Int, val dividerColor: Int, val buttonBgColor: Int,
         val selectedButtonColor: Int, val toggleOffColor: Int, val toggleOnColor: Int,
-        val counterTextColor: Int  // 新增字段
+        val counterTextColor: Int
     )
 
     override fun onCreate() {
@@ -255,6 +252,9 @@ class FloatWindowService : Service() {
         }
     }
 
+    /**
+     * 更新右侧内容区域 - 不再自动添加 Divider，完全由 MenuPages 中的 Item.Divider 手动控制
+     */
     private fun updateRightContent() {
         rightContentContainer.removeAllViews()
         val page = pages.find { it.id == selectedPageId } ?: return
@@ -264,22 +264,16 @@ class FloatWindowService : Service() {
             when (item) {
                 is Item.Switch -> {
                     rightContentContainer.addView(createSwitchView(item, colors))
-                    rightContentContainer.addView(createDivider(colors))
                 }
                 is Item.Counter -> {
                     rightContentContainer.addView(createCounterView(item, colors))
-                    rightContentContainer.addView(createDivider(colors))
                 }
                 is Item.Selector -> {
                     rightContentContainer.addView(createSelectorView(item, colors))
+                }
+                is Item.Divider -> {
                     rightContentContainer.addView(createDivider(colors))
                 }
-            }
-        }
-        if (rightContentContainer.childCount > 0) {
-            val lastView = rightContentContainer.getChildAt(rightContentContainer.childCount - 1)
-            if (lastView is View && lastView.layoutParams?.height == 1) {
-                rightContentContainer.removeViewAt(rightContentContainer.childCount - 1)
             }
         }
     }
@@ -364,7 +358,7 @@ class FloatWindowService : Service() {
         val minusBtn = TextView(this).apply {
             text = "-"
             textSize = 18f
-            setTextColor(colors.textColor)  // 改为跟随主题
+            setTextColor(colors.textColor)
             gravity = Gravity.CENTER
             setPadding((10 * density).toInt(), (4 * density).toInt(), (10 * density).toInt(), (4 * density).toInt())
             background = GradientDrawable().apply {
@@ -384,7 +378,7 @@ class FloatWindowService : Service() {
         val plusBtn = TextView(this).apply {
             text = "+"
             textSize = 18f
-            setTextColor(colors.textColor)  // 改为跟随主题
+            setTextColor(colors.textColor)
             gravity = Gravity.CENTER
             setPadding((10 * density).toInt(), (4 * density).toInt(), (10 * density).toInt(), (4 * density).toInt())
             background = GradientDrawable().apply {
@@ -409,7 +403,6 @@ class FloatWindowService : Service() {
 
     private fun createSelectorView(item: Item.Selector, colors: ThemeColors): LinearLayout {
         val density = resources.displayMetrics.density
-        val isDark = isDarkMode()
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, (8 * density).toInt(), 0, (8 * density).toInt())

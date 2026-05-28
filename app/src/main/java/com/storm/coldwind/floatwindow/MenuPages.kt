@@ -9,6 +9,7 @@ object MenuPages {
                 title = "功能1",
                 items = mutableListOf(
                     Item.Switch("offline_mode", "离线模式", false),
+                    Item.Divider,
                     Item.Switch("infinite_energy", "无限能量", false)
                 )
             ),
